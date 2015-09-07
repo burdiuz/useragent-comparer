@@ -1,0 +1,101 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:Window xmlns:fx="http://ns.adobe.com/mxml/2009" 
+		  xmlns:s="library://ns.adobe.com/flex/spark" 
+		  xmlns:mx="library://ns.adobe.com/flex/mx" width="550" height="500" title="Settings" alwaysInFront="true" showStatusBar="false" type="{NativeWindowType.UTILITY}" backgroundColor="#333333" creationComplete="creationCompleteHandler(event)" close="closeHandler(event)">
+	<fx:Script>
+		<![CDATA[
+			import events.ItemEvent;
+			
+			import flash.net.navigateToURL;
+			
+			import mx.events.FlexEvent;
+			static private var _instance:SettingsWindow;
+			[Bindable]
+			public var settings:Settings = Settings.instance;
+			static public function display():SettingsWindow{
+				if(_instance) _instance.activate();
+				else{
+					_instance = new SettingsWindow();
+					_instance.open();
+				}
+				return _instance;
+			}
+			protected function addButton_clickHandler(event:MouseEvent):void{
+				const agent:UserAgent = new UserAgent(this.titleInput.text, this.urlInput.text);
+				settings.userAgents.addItemAt(agent, 0);
+			}
+			protected function creationCompleteHandler(event:FlexEvent):void{
+				this.grid.addEventListener(ItemEvent.ITEM_DELETE, this.itemDeleteHandler);
+			}
+			private function itemDeleteHandler(event:ItemEvent):void{
+				this.settings.userAgents.removeItem(event.item);
+			}
+			protected function closeHandler(event:Event):void{
+				_instance = null;
+			}
+			
+			protected function linkButton_clickHandler(event:MouseEvent):void{
+				navigateToURL(new URLRequest("http://www.useragentstring.com/"));
+			}
+			
+		]]>
+	</fx:Script>
+	<fx:Declarations>
+		<!-- Place non-visual elements (e.g., services, value objects) here -->
+	</fx:Declarations>
+	<s:layout>
+		<s:VerticalLayout paddingLeft="5" paddingTop="5" paddingRight="5" paddingBottom="5"/>
+	</s:layout>
+	<s:Label text="General Settings"/>
+	<s:Group width="100%">
+		<s:Rect left="0" top="0" right="0" bottom="0">
+			<s:stroke>
+				<s:SolidColorStroke color="0x474747"/>
+			</s:stroke>
+		</s:Rect>
+		<s:Rect left="1" top="1" right="1" bottom="1">
+			<s:stroke>
+				<s:SolidColorStroke color="0x141414"/>
+			</s:stroke>
+		</s:Rect>
+		<s:VGroup left="5" top="5" right="5" bottom="5">
+			<s:CheckBox selected="@{settings.startMaximized}" label="Start application maximized"/>
+		</s:VGroup>
+	</s:Group>
+	<s:Label text="User-Agent Management"/>
+	<s:Group width="100%" height="100%">
+		<s:Rect left="0" top="0" right="0" bottom="0">
+			<s:stroke>
+				<s:SolidColorStroke color="0x474747"/>
+			</s:stroke>
+		</s:Rect>
+		<s:Rect left="1" top="1" right="1" bottom="1">
+			<s:stroke>
+				<s:SolidColorStroke color="0x141414"/>
+			</s:stroke>
+		</s:Rect>
+		<s:VGroup left="1" top="5" right="1" bottom="1">
+			<s:HGroup width="100%" verticalAlign="middle" paddingTop="5" paddingRight="5">
+				<s:Label text="Title:" width="50" textAlign="right"/>
+				<s:TextInput id="titleInput" width="100%"/>
+			</s:HGroup>
+			<s:HGroup width="100%" verticalAlign="middle" paddingRight="5">
+				<s:Label text="URL:" width="50" textAlign="right"/>
+				<s:TextInput id="urlInput" width="100%"/>
+			</s:HGroup>
+			<s:HGroup width="100%" horizontalAlign="right">
+				<s:Button label="Add User-Agent" icon="@Embed('icons/add.png')" click="addButton_clickHandler(event)" enabled="{titleInput.text &amp;&amp; urlInput.text}" skinClass="skins.IconButton"/>
+			</s:HGroup>
+			<s:DataGrid id="grid" dataProvider="{settings.userAgents}" width="100%" height="100%">
+				<s:columns>
+					<s:ArrayList>
+						<s:GridColumn dataField="title" headerText="Title"/>
+						<s:GridColumn dataField="value" headerText="URL"/>
+						<s:GridColumn itemRenderer="itemrenderers.ItemDeleteItemRenderer" headerText="" width="20" minWidth="20" maxWidth="20" />
+					</s:ArrayList>
+				</s:columns>
+			</s:DataGrid>
+			<mx:LinkButton label="http://www.useragentstring.com/" textDecoration="underline" click="linkButton_clickHandler(event)"/>
+		</s:VGroup>
+	</s:Group>
+</s:Window>

@@ -1,0 +1,165 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:VGroup xmlns:fx="http://ns.adobe.com/mxml/2009" 
+		  xmlns:s="library://ns.adobe.com/flex/spark" 
+		  xmlns:mx="library://ns.adobe.com/flex/mx" width="100%" height="100%">
+	<fx:Metadata>
+		[Event(name="close", type="flash.events.Event")]
+		[Event(name="locationUpdate", type="events.BrowserEvent")]
+	</fx:Metadata>
+	<fx:Script>
+		<![CDATA[
+			import events.BrowserEvent;
+			
+			import mx.core.IVisualElementContainer;
+			import mx.events.FlexEvent;
+			
+			import spark.components.Window;
+			private var _manageCookies:Boolean;
+			private var _userAgent:UserAgent;
+			private var _url:String = "";
+			private var _postVariables:String = "";
+			private var _usePOSTMethod:Boolean = false;
+
+			[Bindable]
+			public var title:String = "";
+			[Bindable]
+			public var drivenTab:Boolean = false;
+			[Bindable]
+			public var headers:Array;
+
+			public function get userAgent():UserAgent{
+				return this._userAgent;
+			}
+			public function set userAgent(value:UserAgent):void{
+				this._userAgent = value;
+				this.refresh();
+			}
+
+			public function get manageCookies():Boolean{
+				return this._manageCookies;
+			}
+
+			public function set manageCookies(value:Boolean):void{
+				this._manageCookies = value;
+				this.refresh();
+			}
+
+			public function load(url:String, usePOST:Boolean=false, postVars:String=""):void{
+				if(this._url != url){
+					this._url = url;
+					this._usePOSTMethod = usePOST;
+					this._postVariables = postVars;
+					this.refresh();
+				}
+			}
+			
+			protected function html_creationCompleteHandler(event:FlexEvent):void{
+				const host:BrowserHost = new BrowserHost();
+				host.addEventListener(BrowserEvent.LOCATION_UPDATE, this.locationUpdateHandler);
+				host.addEventListener(BrowserEvent.TITLE_UPDATE, this.titleUpdateHandler);
+				this.html.htmlHost = host;
+				this.refresh();
+			}
+			private function refresh():void{
+				if(!this.html || !this.html.htmlLoader || !this._url) return;
+				const loader:HTMLLoader = this.html.htmlLoader;
+				loader.userAgent = this.userAgent.value;
+				loader.manageCookies = this.manageCookies;
+				const request:URLRequest = new URLRequest(this._url);
+				if(this._usePOSTMethod){
+					request.method = URLRequestMethod.POST;
+					try{
+						request.data = new URLVariables(this._postVariables);
+					}catch(error:Error){}
+				}else request.method = URLRequestMethod.GET;
+				request.requestHeaders = this.headers;
+				loader.load(request);
+				if(this._window){
+					this._window.title = this._userAgent.title+" / "+this._url;
+				}
+			}
+			
+			protected function closeButton_clickHandler(event:MouseEvent):void{
+				this.html.htmlHost = null;
+				this.dispatchEvent(new Event(Event.CLOSE));
+			}
+			
+			protected function expandButton_clickHandler(event:MouseEvent):void{
+				this.expand();
+			}
+			
+			protected function collapseButton_clickHandler(event:MouseEvent):void{
+				this.collapse();	
+			}
+			private var _parent:IVisualElementContainer;
+			private var _window:Window;
+			public function expand():void{
+				if(this.currentState!="collapsed") return;
+				this._parent = this.owner as IVisualElementContainer;
+				const window:Window = this._window = new Window();
+				window.showStatusBar = false;
+				window.setStyle("backgroundColor", 0x333333);
+				window.width = 640;
+				window.height = 480;
+				this._window.title = this._userAgent.title+" / "+this._url;
+				window.addEventListener(Event.CLOSE, this.windowCloseHandler);
+				this._parent.removeElement(this);
+				window.addElement(this);
+				window.open();
+				this.currentState = "expanded";
+			}
+			public function collapse():void{
+				if(this.currentState!="expanded") return;
+				this._window.removeEventListener(Event.CLOSE, this.windowCloseHandler);
+				this._window.removeElement(this);
+				this._parent.addElement(this);
+				this._window.close();
+				this._parent = null;
+				this._window = null;
+				this.currentState = "collapsed";
+			}
+			
+			protected function refreshButton_clickHandler(event:MouseEvent):void{
+				this.html.reload();
+			}
+			
+			private function windowCloseHandler(event:Event):void{
+				this.closeButton_clickHandler(null);
+			}
+			
+			protected function locationUpdateHandler(event:BrowserEvent):void{
+				if(!this.drivenTab && this._url!=event.value){
+					this.dispatchEvent(event);
+				}
+			}
+			
+			protected function titleUpdateHandler(event:BrowserEvent):void{
+				this.title = event.value;
+			}
+			
+			protected function html_locationChangeHandler(event:Event):void{
+				/* host already does this
+				if(!this.drivenTab && this._url!=this.html.location){
+					this.dispatchEvent(new BrowserEvent(BrowserEvent.LOCATION_UPDATE, false, false, this.html.location));
+				}
+				*/
+			}
+			
+		]]>
+	</fx:Script>
+	<fx:Declarations>
+		<!-- Place non-visual elements (e.g., services, value objects) here -->
+	</fx:Declarations>
+	<s:states>
+		<s:State name="collapsed"/>
+		<s:State name="expanded"/>
+	</s:states>
+	<s:HGroup width="100%" horizontalAlign="right" verticalAlign="middle">
+		<s:Label text="Title:"/>
+		<s:TextInput text="{title}" width="100%" editable="false"/>
+		<s:Image source="@Embed('icons/refresh.png')" width="22" height="22" verticalAlign="middle" horizontalAlign="center" fillMode="clip" buttonMode="true" useHandCursor="true" click="refreshButton_clickHandler(event)" toolTip="Refresh Web page"/>
+		<s:Image source.collapsed="@Embed('icons/expand.png')" source.expanded="@Embed('icons/collapse.png')" width="22" height="22" verticalAlign="middle" horizontalAlign="center" fillMode="clip" buttonMode="true" useHandCursor="true" click.collapsed="expandButton_clickHandler(event)" click.expanded="collapseButton_clickHandler(event)" toolTip.collapsed="Expand into new Window" toolTip.expanded="Collapse to main Window"/>
+		<s:Image source="@Embed('icons/delete.png')" width="22" height="22" verticalAlign="middle" horizontalAlign="center" fillMode="clip" buttonMode="true" useHandCursor="true" click="closeButton_clickHandler(event)" includeIn="collapsed" toolTip="Close Browser view"/>
+	</s:HGroup>
+	<mx:HTML id="html" width="100%" height="100%" creationComplete="html_creationCompleteHandler(event)" locationChange="html_locationChangeHandler(event)"/>
+</s:VGroup>

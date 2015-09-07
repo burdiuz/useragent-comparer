@@ -1,0 +1,160 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:WindowedApplication xmlns:fx="http://ns.adobe.com/mxml/2009" 
+					   xmlns:s="library://ns.adobe.com/flex/spark" 
+					   xmlns:mx="library://ns.adobe.com/flex/mx" width="800" height="600" showStatusBar="false" creationComplete="creationCompleteHandler(event)" close="closeHandler(event)">
+	<fx:Style source="style.css"/>
+	<fx:Script>
+		<![CDATA[
+			import events.BrowserEvent;
+			
+			import mx.collections.ArrayList;
+			import mx.events.CollectionEvent;
+			import mx.events.FlexEvent;
+			[Bindable]
+			public var tabs:ArrayList = new ArrayList();
+			[Bindable]
+			public var settings:Settings = Settings.instance;
+			[Bindable]
+			public var usePOSTMethod:Boolean = false;
+			[Bindable]
+			public var postVariables:String = "";
+			private var _urlInputFocused:Boolean = false;
+			protected function creationCompleteHandler(event:FlexEvent):void{
+				this.tabs.addEventListener(CollectionEvent.COLLECTION_CHANGE, this.tabsCollectionChangeHandler);
+				if(settings.startMaximized){
+					this.maximize();
+				}
+			}
+			private function tabsCollectionChangeHandler(event:CollectionEvent):void{
+				
+			}
+			
+			protected function browseButton_clickHandler(event:Event):void{
+				if(!this.tabs.length){
+					this.addButton_clickHandler(null);
+				}
+				var value:String = this.urlInput.text;
+				const index:int = value.indexOf("://");
+				if(index<0 || index>9) value = "http://"+value;
+				this.setURL(value);
+			}
+			
+			public function setURL(value:String):void{
+				settings.url = value;
+				for each(var tab:BrowserTab in this.tabs.source){
+					tab.load(settings.url, this.usePOSTMethod, this.postVariables);
+				}
+				if(!this._urlInputFocused){
+					this.urlInput.text = settings.url;
+				}
+				this.usePOSTMethod = false;
+				this.postVariables = "";
+			}
+			
+			protected function addButton_clickHandler(event:MouseEvent):void{
+				const tab:BrowserTab = new BrowserTab();
+				tab.addEventListener(Event.CLOSE, this.tabCloseHandler);
+				tab.addEventListener(BrowserEvent.LOCATION_UPDATE, this.tabLocationUpdateHandler);
+				tab.userAgent = this.userAgentDropDown.selectedItem;
+				tab.manageCookies = this.settings.enableCookies;
+				tab.drivenTab = this.drivenCheckbox.selected;
+				tab.headers = this.settings.getRequestHeaders();
+				this.tabs.addItem(tab);
+				this.container.addElement(tab);
+				if(this.settings.url){
+					tab.load(this.settings.url, this.usePOSTMethod, this.postVariables);
+				}
+			}
+			
+			private function tabCloseHandler(event:Event):void{
+				const tab:BrowserTab = event.target as BrowserTab;
+				tab.addEventListener(Event.CLOSE, this.tabCloseHandler);
+				this.tabs.removeItem(tab);
+				if(this.container.contains(tab)){
+					this.container.removeElement(tab);
+				}
+			}
+			private function tabLocationUpdateHandler(event:BrowserEvent):void{
+				this.setURL(event.value);
+			}
+			
+			protected function urlInput_creationCompleteHandler(event:FlexEvent):void{
+				this.urlInput.text = settings.url;
+			}			
+			
+			protected function closeHandler(event:Event):void{
+				Settings.write();
+				this.nativeApplication.exit();
+			}
+			
+		]]>
+	</fx:Script>
+	<fx:Declarations>
+		<!-- Place non-visual elements (e.g., services, value objects) here -->
+	</fx:Declarations>
+	<s:states>
+		<s:State name="collapsed"/>
+		<s:State name="expanded"/>
+	</s:states>
+	<s:layout>
+		<s:VerticalLayout paddingLeft="5" paddingTop="5" paddingBottom="5" paddingRight="5" />
+	</s:layout>
+	<s:Group width="100%">
+		<s:Rect left="0" top="0" right="0" bottom="0">
+			<s:stroke>
+				<s:SolidColorStroke color="0x474747"/>
+			</s:stroke>
+		</s:Rect>
+		<s:Rect left="1" top="1" right="1" bottom="1">
+			<s:stroke>
+				<s:SolidColorStroke color="0x141414"/>
+			</s:stroke>
+		</s:Rect>
+		<s:VGroup left="5" top="5" right="5" bottom="5" horizontalAlign="right">
+			<s:HGroup width="100%" verticalAlign="middle">
+				<s:Button label.collapsed="+" label.expanded="-" width="20" click.collapsed="this.currentState = 'expanded';" click.expanded="this.currentState = 'collapsed';"/>
+				<s:Label text="Location:" width.expanded="86" textAlign="right" />
+				<s:TextInput id="urlInput" prompt="Enter URL to browse..." width="100%" enter="browseButton_clickHandler(event)" creationComplete="urlInput_creationCompleteHandler(event)" focusIn="_urlInputFocused = true;" focusOut="_urlInputFocused = false;" />
+				<s:Button label="Go" click="browseButton_clickHandler(event)" width="50" enabled="{this.urlInput.text}"/>
+			</s:HGroup>
+			<s:HGroup width="100%" verticalAlign="middle" includeIn="expanded">
+				<s:Label text="Request method:" width="110" textAlign="right" />
+				<s:RadioButton selected="{!usePOSTMethod}" label="GET" groupName="requestMethod" width="50" />
+				<s:RadioButton selected="@{usePOSTMethod}" label="POST" groupName="requestMethod" />
+			</s:HGroup>
+			<s:HGroup width="100%" verticalAlign="middle" includeIn="expanded" toolTip="URL encoded query string of variables">
+				<s:Label text="POST Variables:" width="110" textAlign="right" />
+				<s:TextInput text="@{postVariables}" width="100%" enabled="{usePOSTMethod}" />
+			</s:HGroup>
+		</s:VGroup>
+	</s:Group>
+	<s:Group width="100%">
+		<s:Rect left="0" top="0" right="0" bottom="0">
+			<s:stroke>
+				<s:SolidColorStroke color="0x474747"/>
+			</s:stroke>
+		</s:Rect>
+		<s:Rect left="1" top="1" right="1" bottom="1">
+			<s:stroke>
+				<s:SolidColorStroke color="0x141414"/>
+			</s:stroke>
+		</s:Rect>
+		<s:VGroup left="5" top="5" right="5" bottom="5" horizontalAlign="right">
+			<s:HGroup width="100%" verticalAlign="middle">
+				<s:Label text="User-Agent:" width="77" width.expanded="110" textAlign="right" />
+				<s:DropDownList id="userAgentDropDown" dataProvider="{settings.userAgents}" selectedIndex="0" labelField="title" width="100%" />
+				<s:Image source="@Embed('icons/settings.png')" width="22" height="22" verticalAlign="middle" horizontalAlign="center" fillMode="clip" buttonMode="true" useHandCursor="true" click="SettingsWindow.display();" toolTip="Edit User-Agent list"/>
+				<s:CheckBox id="drivenCheckbox" label="Driven Tab" toolTip="Changes location silently (without synchronization with other tabs)"/>
+				<s:CheckBox selected="@{settings.enableCookies}" label="Manage Cookies" width="115" toolTip="Accept and save cookies"/>
+				<s:Button label="Add" width="50" click="addButton_clickHandler(event)" enabled="{userAgentDropDown.selectedItem}"/>
+			</s:HGroup>
+			<s:DataGroup dataProvider="{settings.customHeaders}" width="100%" itemRenderer="itemrenderers.CustomHeaderItemRenderer" includeIn="expanded">
+				<s:layout>
+					<s:VerticalLayout/>
+				</s:layout>
+			</s:DataGroup>
+			<s:Button label="Add Custom Header" includeIn="expanded" click="settings.customHeaders.addItem(new CustomHeader())"/>
+		</s:VGroup>
+	</s:Group>
+	<mx:DividedBox id="container" width="100%" height="100%" direction="horizontal"/>
+</s:WindowedApplication>
