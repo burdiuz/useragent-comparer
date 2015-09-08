@@ -3,7 +3,7 @@
 This is an open-source application based on  Adobe AIR runtime. It requests entered URL with specified User-Agent HTTP header and displays requested web page with its internal WebKit browser. So if web-site has browser specific handling you can find difference  using this application.  
   
 [Download User-Agent Comparer installation file](https://github.com/burdiuz/useragent-comparer/raw/master/UserAgentComparer.air)  
-> **Note:** This is cross-platform application that can be installed on Windows, Mac or Linux machine. You will need [Adobe AIR runtime](https://get.adobe.com/air/) installed before installing User-Agent Comparer application. [Download Adobe AIR runtime](https://get.adobe.com/air/)  
+> **Note:** This is a cross-platform application that can be installed on Windows, Mac or Linux machine. You will need [Adobe AIR runtime](https://get.adobe.com/air/) installed before installing User-Agent Comparer application. [Download Adobe AIR runtime](https://get.adobe.com/air/)  
   
 Main window of the application  
 ![Application Main window](mainwindow.png)  
