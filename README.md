@@ -6,8 +6,10 @@ Main window of the application
 ![Application Mian window](mainwindow.png)
 You can create more tabs in main window for each User-Agent you want to see
 ![Multiple tabs for each User-Agent](multipletabs.png)
-Move tab into separate window
+Move tabs into separate windows for better content view
 ![Windows for each User-Agent](externalwindows.png)
+Settings window allows to add more User-Agent values
+![Settings window](settingwindow.png)
 
 [Download User-Agent Comparer](https://github.com/burdiuz/useragent-comparer/raw/master/UserAgentComparer.air)
 
